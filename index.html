@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FAF8F5" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#171513" media="(prefers-color-scheme: dark)">
+<title>Weekly intake tracker, 19 Oct to 25 Dec</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #FAF8F5;
+    --text: #1F1D1A;
+    --muted: #6B655D;
+    --rule: #E2DDD5;
+    --deficit: #C8553D;
+    --maint: #3E7C6B;
+    --low: #F1EDE6;
+    --med: #F6E3DD;
+    --high: #EBC4B8;
+    --font: "Inter", system-ui, "Helvetica Neue", Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #171513;
+      --text: #F2EEE8;
+      --muted: #A39C92;
+      --rule: #34302B;
+      --low: #1F1C19;
+      --med: #2B201C;
+      --high: #3D2821;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 400 13px/1.45 var(--font);
+    font-variant-numeric: tabular-nums;
+    padding: calc(20px + env(safe-area-inset-top, 0px)) calc(20px + env(safe-area-inset-right, 0px)) calc(40px + env(safe-area-inset-bottom, 0px)) calc(20px + env(safe-area-inset-left, 0px));
+  }
+  .wrap { max-width: 480px; margin: 0 auto; }
+  button, input { font-family: inherit; color: inherit; }
+
+  h1 { font-size: 24px; line-height: 1.2; font-weight: 600; margin: 0 0 2px; letter-spacing: -0.01em; }
+  .sub { color: var(--muted); margin: 0 0 20px; }
+  .label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+
+  /* Today */
+  .today { display: none; border: 1px solid var(--rule); border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; align-items: center; justify-content: space-between; gap: 16px; }
+  .today.show { display: flex; }
+  .today .when { font-weight: 600; font-size: 16px; margin-top: 2px; }
+  .today .what { color: var(--muted); }
+  .today .num { font-size: 24px; font-weight: 600; line-height: 1; text-align: right; }
+  .today .num small { display: block; font-size: 11px; font-weight: 400; color: var(--muted); margin-top: 4px; }
+
+  /* Legend */
+  .legend { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 20px; }
+  .legend div { border-radius: 8px; padding: 8px 10px; border: 1px solid var(--rule); }
+  .legend b { display: block; font-size: 13px; font-weight: 600; }
+  .legend span { color: var(--muted); font-size: 11px; }
+  .legend .l { background: var(--low); }
+  .legend .m { background: var(--med); }
+  .legend .h { background: var(--high); }
+
+  /* Phase strip */
+  .strip-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+  .strip-key { display: flex; gap: 12px; font-size: 11px; color: var(--muted); }
+  .strip-key i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 4px; }
+  .strip { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; margin-bottom: 24px; }
+  .strip button { height: 36px; border: 2px solid transparent; border-radius: 6px; font-weight: 600; font-size: 13px; color: #fff; cursor: pointer; padding: 0; }
+  .strip .D { background: var(--deficit); }
+  .strip .M { background: var(--maint); }
+  .strip .cur { border-color: var(--text); }
+
+  /* Week card */
+  .week { border: 2px solid var(--deficit); border-radius: 8px; margin-bottom: 20px; overflow: hidden; scroll-margin-top: 16px; }
+  .week.M { border-color: var(--maint); }
+  .wk-head { padding: 12px 16px 16px; background: color-mix(in srgb, var(--deficit) 12%, var(--bg)); }
+  .week.M .wk-head { background: color-mix(in srgb, var(--maint) 12%, var(--bg)); }
+  .wk-top { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .pill { background: var(--deficit); color: #fff; font-weight: 600; font-size: 13px; border-radius: 6px; padding: 2px 8px; }
+  .week.M .pill { background: var(--maint); }
+  .wk-range { font-weight: 600; }
+  .wk-num { margin-left: auto; color: var(--muted); }
+  .wk-main { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; }
+  .wk-total { font-size: 24px; font-weight: 600; line-height: 1; }
+  .wk-total-lab { color: var(--muted); margin-top: 4px; }
+  .wk-side { text-align: right; color: var(--muted); }
+  .wk-side b { color: var(--text); font-weight: 600; }
+  .wk-note { margin-top: 12px; padding-top: 8px; border-top: 1px solid var(--rule); color: var(--text); }
+  .wk-note:empty { display: none; }
+
+  .cols, .row { display: grid; grid-template-columns: 50px 40px 1fr 64px 52px; gap: 6px; align-items: center; padding: 0 12px; }
+  .cols { height: 32px; border-top: 1px solid var(--rule); font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  .cols span:nth-child(2) { text-align: center; }
+  .cols span:nth-child(3) { text-align: right; }
+  .cols span:nth-child(4), .cols span:nth-child(5) { text-align: center; }
+
+  .row { min-height: 60px; border-top: 1px solid var(--rule); position: relative; }
+  .row.L { background: var(--low); }
+  .row.M { background: var(--med); }
+  .row.H { background: var(--high); }
+  .row.today-row::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--text); }
+  .day b { display: block; font-weight: 600; font-size: 15px; line-height: 1.2; }
+  .day span { color: var(--muted); font-size: 11px; }
+  .chip { width: 40px; height: 36px; border: 0; border-radius: 8px; background: var(--text); color: var(--bg); font-weight: 600; font-size: 15px; cursor: pointer; padding: 0; }
+  .kc { text-align: right; }
+  .kcal { font-size: 24px; font-weight: 600; line-height: 1.1; }
+  .row.logged .kcal { color: var(--muted); }
+  .var { font-size: 11px; color: var(--muted); min-height: 14px; margin-top: 2px; }
+  .ate, .kg, .waist {
+    width: 100%; height: 36px; text-align: center; font-size: 16px; /* 16px stops iOS zooming on focus */
+    border: 1px solid var(--rule); border-radius: 8px; background: var(--bg); padding: 0 4px; font-variant-numeric: tabular-nums;
+  }
+  .ate.filled { border-color: var(--text); font-weight: 600; }
+  .ate::placeholder, .kg::placeholder, .waist::placeholder { color: var(--muted); opacity: 0.7; }
+
+  .wk-foot { display: grid; grid-template-columns: 1fr 1fr 96px; gap: 8px; padding: 12px; border-top: 1px solid var(--rule); align-items: end; }
+  .wk-foot .label { display: block; margin-bottom: 4px; }
+  .wk-foot .val { font-weight: 600; font-size: 15px; line-height: 36px; }
+  .wk-foot .val small { font-weight: 400; color: var(--muted); font-size: 11px; margin-left: 4px; }
+
+  /* Rules */
+  .rules { border-top: 1px solid var(--rule); padding-top: 16px; }
+  .rules h2 { margin: 0 0 8px; }
+  .rules ul { margin: 0; padding-left: 16px; }
+  .rules li { margin-bottom: 4px; }
+  .note { color: var(--muted); margin-top: 16px; font-size: 11px; }
+
+  button:focus-visible, input:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+
+  @media (max-width: 359px) {
+    .kcal { font-size: 20px; }
+    .cols, .row { padding: 0 8px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Weekly intake</h1>
+  <p class="sub">19 Oct to 25 Dec. Tap the chip to set a day's type, then log what you ate and the rest of that week's targets re-ration.</p>
+
+  <div class="today" id="today" aria-live="polite"></div>
+
+  <div class="legend">
+    <div class="h"><b>H · High</b><span>Hot strength</span></div>
+    <div class="m"><b>M · Med</b><span>Pilates</span></div>
+    <div class="l"><b>L · Low</b><span>No session</span></div>
+  </div>
+
+  <div class="strip-head">
+    <span class="label">Weeks</span>
+    <span class="strip-key"><span><i style="background:var(--deficit)"></i>Deficit</span><span><i style="background:var(--maint)"></i>Maintenance</span></span>
+  </div>
+  <div class="strip" id="strip"></div>
+
+  <div id="weeks"></div>
+
+  <section class="rules">
+    <h2 class="label">Rules</h2>
+    <ul>
+      <li>No target goes below 1,700 kcal.</li>
+      <li>A day's target can rise at most 250 kcal above its plan, so a light day isn't banked and eaten back later.</li>
+      <li>Days you haven't logged in the past count as eaten at target.</li>
+      <li>Judge the 7-day average weight only, weighed each morning after the toilet and before eating.</li>
+      <li>Losing more than 0.5 kg a week on the average: add 150 kcal a day.</li>
+      <li>No movement after 3 weeks: check logging accuracy first (oils, wine, shared dishes), then cut 100 to 150.</li>
+      <li>Christmas events: eat them, and don't compensate before or after.</li>
+    </ul>
+    <p class="note">Entries are saved on this device only.</p>
+  </section>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---------- Plan data ----------
+  var START = new Date(2026, 9, 19);   // Mon 19 Oct 2026
+  var END   = new Date(2026, 11, 25);  // Fri 25 Dec 2026
+  // D = deficit week, M = maintenance week (weeks run Mon to Sun)
+  var PHASE = { 1:"D", 2:"D", 3:"D", 4:"D", 5:"M", 6:"D", 7:"D", 8:"D", 9:"D", 10:"M" };
+  var DAILY_AVG = { D: 1850, M: 2100 };            // 12,950 / 14,700 over 7 days
+  var OFFSET = { H: 175, M: -50, L: -100 };         // relative to the week's average day
+  var DEFAULT_TYPES = ["M","L","H","M","L","M","H"]; // Mon to Sun
+  var NEXT_TYPE = { H: "M", M: "L", L: "H" };
+  var TYPE_WORD = { H: "High", M: "Med", L: "Low" };
+  var DOW = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  var MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  var FLOOR = 1700;   // no target below this
+  var CAP = 250;      // a target can rise at most this far above its plan
+  var KEY = "weekly-intake-tracker-v1";
+
+  // ---------- State ----------
+  var state = load();
+  state.types = state.types || {};
+  state.weights = state.weights || {};
+  state.waist = state.waist || {};
+  state.actual = state.actual || {};
+
+  function load() { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+
+  // ---------- Helpers ----------
+  function pad(n) { return n < 10 ? "0" + n : "" + n; }
+  function iso(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+  function dowIndex(d) { return (d.getDay() + 6) % 7; }
+  function fmt(n) { return n.toLocaleString("en-AU"); }
+  function short(d) { return d.getDate() + " " + MON[d.getMonth()]; }
+  function addDays(d, n) { return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n); }
+  function r5(v) { return Math.round(v / 5) * 5; }
+  function sum(a) { return a.reduce(function (x, y) { return x + y; }, 0); }
+  function signed(n) { return (n > 0 ? "+" : "\u2212") + fmt(Math.abs(n)); }
+
+  var todayIso = iso(new Date());
+
+  // Build weeks (Mon to Sun)
+  var weeks = [];
+  (function build() {
+    var cursor = START, n = 1;
+    while (cursor <= END) {
+      var days = [], d = cursor;
+      while (d <= END) {
+        days.push({ date: d, iso: iso(d), dow: dowIndex(d) });
+        if (dowIndex(d) === 6) break;
+        d = addDays(d, 1);
+      }
+      weeks.push({ n: n, phase: PHASE[n], days: days });
+      cursor = addDays(days[days.length - 1].date, 1);
+      n++;
+    }
+  })();
+
+  function typeOf(day) { return state.types[day.iso] || DEFAULT_TYPES[day.dow]; }
+  function actualOf(isoStr) {
+    var v = parseInt(state.actual[isoStr], 10);
+    return isNaN(v) ? null : v;
+  }
+
+  // ---------- Allocation ----------
+  // Each day's target is worked out from what was left that morning.
+  // Logged day: consumed = actual. Unlogged day: assumed eaten at its target.
+  function allocate(w) {
+    var n = w.days.length;
+    var total = DAILY_AVG[w.phase] * n;
+    var off = w.days.map(function (d) { return OFFSET[typeOf(d)]; });
+    var avg0 = (total - sum(off)) / n;
+    var plan = off.map(function (o) { return Math.max(r5(avg0 + o), FLOOR); });
+    var targets = [], consumed = [], used = 0;
+    for (var i = 0; i < n; i++) {
+      var avg = (total - used - sum(off.slice(i))) / (n - i);
+      var t = r5(avg + off[i]);
+      t = Math.min(t, plan[i] + CAP);
+      t = Math.max(t, FLOOR);
+      targets.push(t);
+      var a = actualOf(w.days[i].iso);
+      var c = a != null ? a : t;
+      consumed.push(c);
+      used += c;
+    }
+    return { total: total, targets: targets, consumed: consumed, used: used };
+  }
+
+  function weekAvgWeight(w) {
+    var vals = [];
+    w.days.forEach(function (d) {
+      var v = parseFloat(state.weights[d.iso]);
+      if (!isNaN(v)) vals.push(v);
+    });
+    if (!vals.length) return null;
+    return { avg: sum(vals) / vals.length, count: vals.length };
+  }
+
+  // ---------- Render ----------
+  var weeksEl = document.getElementById("weeks");
+  var stripEl = document.getElementById("strip");
+  var todayEl = document.getElementById("today");
+
+  function currentWeekIndex() {
+    for (var i = 0; i < weeks.length; i++) {
+      for (var j = 0; j < weeks[i].days.length; j++) if (weeks[i].days[j].iso === todayIso) return i;
+    }
+    return -1;
+  }
+
+  function renderStrip() {
+    var cur = currentWeekIndex();
+    stripEl.innerHTML = "";
+    weeks.forEach(function (w, i) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = w.phase + (i === cur ? " cur" : "");
+      b.textContent = w.n;
+      b.setAttribute("aria-label", "Week " + w.n + ", " + (w.phase === "D" ? "deficit" : "maintenance"));
+      b.addEventListener("click", function () {
+        document.getElementById("week-" + w.n).scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+      stripEl.appendChild(b);
+    });
+  }
+
+  function weekHTML(w) {
+    var first = w.days[0].date, last = w.days[w.days.length - 1].date;
+    var range = first.getMonth() === last.getMonth()
+      ? first.getDate() + " to " + last.getDate() + " " + MON[last.getMonth()]
+      : short(first) + " to " + short(last);
+    var phaseWord = w.phase === "D" ? "Deficit" : "Maintenance";
+
+    var rows = w.days.map(function (d) {
+      var ty = typeOf(d);
+      var a = actualOf(d.iso);
+      var wv = state.weights[d.iso] != null ? state.weights[d.iso] : "";
+      return '<div class="row ' + ty + (d.iso === todayIso ? " today-row" : "") + '">' +
+        '<div class="day"><b>' + DOW[d.dow] + '</b><span>' + short(d.date) + '</span></div>' +
+        '<button type="button" class="chip" data-iso="' + d.iso + '" aria-label="' + DOW[d.dow] + ' ' + short(d.date) + ': ' + TYPE_WORD[ty] + ' day. Tap to change.">' + ty + '</button>' +
+        '<div class="kc"><div class="kcal"></div><div class="var"></div></div>' +
+        '<input class="ate' + (a != null ? " filled" : "") + '" type="text" inputmode="numeric" placeholder="kcal" data-iso="' + d.iso + '" value="' + (a != null ? a : "") + '" aria-label="Kcal eaten, ' + DOW[d.dow] + ' ' + short(d.date) + '">' +
+        '<input class="kg" type="text" inputmode="decimal" placeholder="kg" data-iso="' + d.iso + '" value="' + wv + '" aria-label="Weight in kg, ' + DOW[d.dow] + ' ' + short(d.date) + '">' +
+      '</div>';
+    }).join("");
+
+    var cv = state.waist[w.n] != null ? state.waist[w.n] : "";
+    return '<div class="wk-head">' +
+        '<div class="wk-top"><span class="pill">' + phaseWord + '</span><span class="wk-range">' + range + '</span><span class="wk-num">Week ' + w.n + '</span></div>' +
+        '<div class="wk-main">' +
+          '<div><div class="wk-total" data-big></div><div class="wk-total-lab" data-biglab></div></div>' +
+          '<div class="wk-side">Budget <b data-budget></b><br>Eaten <b data-eaten></b><br><span data-avgleft></span><br>Protein <b>110 to 115 g</b></div>' +
+        '</div>' +
+        '<div class="wk-note" data-note></div>' +
+      '</div>' +
+      '<div class="cols"><span>Day</span><span>Type</span><span>Target</span><span>Ate</span><span>kg</span></div>' +
+      rows +
+      '<div class="wk-foot">' +
+        '<div><span class="label">Avg weight</span><div class="val" data-avg>No data</div></div>' +
+        '<div><span class="label">Vs last week</span><div class="val" data-delta>None</div></div>' +
+        '<div><span class="label">Waist cm</span><input class="waist" type="text" inputmode="decimal" placeholder="cm" data-week="' + w.n + '" value="' + cv + '" aria-label="Waist in cm, week ' + w.n + '"></div>' +
+      '</div>';
+  }
+
+  // Fill in every number that depends on targets or actuals, without touching the inputs.
+  function refresh(i) {
+    var w = weeks[i];
+    var el = document.getElementById("week-" + w.n);
+    var A = allocate(w);
+    var rows = el.querySelectorAll(".row");
+    var eaten = 0, known = 0, remaining = [], pastUnlogged = 0;
+
+    w.days.forEach(function (d, k) {
+      var a = actualOf(d.iso);
+      var row = rows[k];
+      row.querySelector(".kcal").textContent = fmt(A.targets[k]);
+      row.classList.toggle("logged", a != null);
+      var v = row.querySelector(".var");
+      if (a != null) {
+        var diff = a - A.targets[k];
+        v.textContent = diff === 0 ? "on target" : signed(diff);
+        eaten += a; known += a;
+      } else {
+        v.textContent = "";
+        if (d.iso < todayIso) { known += A.consumed[k]; pastUnlogged++; }
+        else remaining.push(A.targets[k]);
+      }
+    });
+
+    var left = A.total - known;
+    var big = el.querySelector("[data-big]"), lab = el.querySelector("[data-biglab]");
+    var note = [];
+
+    if (remaining.length) {
+      big.textContent = (left < 0 ? "\u2212" : "") + fmt(Math.abs(left));
+      lab.textContent = "kcal left, " + remaining.length + (remaining.length === 1 ? " day" : " days");
+      el.querySelector("[data-avgleft]").innerHTML = "Avg <b>" + fmt(r5(sum(remaining) / remaining.length)) + "</b> a day left";
+      if (A.used > A.total + 10) note.push("Over budget by " + fmt(A.used - A.total) + " kcal. Remaining days are at the " + fmt(FLOOR) + " floor.");
+      else if (A.used < A.total - 10) note.push(fmt(A.total - A.used) + " kcal unused. A day can rise at most " + CAP + " above plan, and the rest isn't carried forward.");
+    } else {
+      var diffW = A.total - known;
+      if (diffW === 0) { big.textContent = "0"; lab.textContent = "on budget"; }
+      else { big.textContent = fmt(Math.abs(diffW)); lab.textContent = diffW < 0 ? "kcal over budget" : "kcal under budget"; }
+      el.querySelector("[data-avgleft]").textContent = "Week complete";
+    }
+    if (pastUnlogged) note.push(pastUnlogged + (pastUnlogged === 1 ? " past day isn't" : " past days aren't") + " logged and " + (pastUnlogged === 1 ? "counts" : "count") + " as eaten at target.");
+
+    el.querySelector("[data-budget]").textContent = fmt(A.total);
+    el.querySelector("[data-eaten]").textContent = fmt(eaten);
+    el.querySelector("[data-note]").innerHTML = note.join("<br>");
+  }
+
+  function renderWeek(i) {
+    var w = weeks[i];
+    var el = document.getElementById("week-" + w.n);
+    if (!el) {
+      el = document.createElement("section");
+      el.id = "week-" + w.n;
+      weeksEl.appendChild(el);
+    }
+    el.className = "week " + w.phase;
+    el.innerHTML = weekHTML(w);
+    refresh(i);
+  }
+
+  function updateFooters() {
+    var prev = null;
+    weeks.forEach(function (w) {
+      var el = document.getElementById("week-" + w.n);
+      var a = weekAvgWeight(w);
+      var avgEl = el.querySelector("[data-avg]");
+      var dEl = el.querySelector("[data-delta]");
+      if (a) {
+        avgEl.innerHTML = a.avg.toFixed(1) + ' kg<small>' + a.count + ' of ' + w.days.length + '</small>';
+        if (prev != null) {
+          var diff = a.avg - prev;
+          var sign = diff > 0.049 ? "+" : (diff < -0.049 ? "\u2212" : "");
+          dEl.textContent = sign + Math.abs(diff).toFixed(1) + " kg";
+        } else {
+          dEl.textContent = "None";
+        }
+        prev = a.avg;
+      } else {
+        avgEl.textContent = "No data";
+        dEl.textContent = "None";
+      }
+    });
+  }
+
+  function renderToday() {
+    var idx = currentWeekIndex();
+    if (idx < 0) { todayEl.className = "today"; return; }
+    var w = weeks[idx], A = allocate(w);
+    for (var i = 0; i < w.days.length; i++) {
+      if (w.days[i].iso === todayIso) {
+        var d = w.days[i], a = actualOf(d.iso);
+        var line = TYPE_WORD[typeOf(d)] + " day, " + (w.phase === "D" ? "deficit" : "maintenance") + " week " + w.n;
+        var sub = a != null ? "Logged " + fmt(a) + (a - A.targets[i] === 0 ? "" : " (" + signed(a - A.targets[i]) + ")") : "kcal target";
+        todayEl.className = "today show";
+        todayEl.innerHTML =
+          '<div><div class="label">Today</div><div class="when">' + DOW[d.dow] + ' ' + short(d.date) + '</div>' +
+          '<div class="what">' + line + '</div></div>' +
+          '<div class="num">' + fmt(A.targets[i]) + '<small>' + sub + '</small></div>';
+        return;
+      }
+    }
+  }
+
+  function renderAll() {
+    weeks.forEach(function (w, i) { renderWeek(i); });
+    renderStrip();
+    renderToday();
+    updateFooters();
+  }
+
+  // ---------- Events ----------
+  weeksEl.addEventListener("click", function (e) {
+    var b = e.target.closest("button.chip");
+    if (!b) return;
+    var key = b.getAttribute("data-iso");
+    var row = b.closest(".row");
+    var current = row.classList.contains("H") ? "H" : row.classList.contains("M") ? "M" : "L";
+    state.types[key] = NEXT_TYPE[current];
+    save();
+    var i = parseInt(b.closest(".week").id.replace("week-", ""), 10) - 1;
+    renderWeek(i);
+    renderToday();
+    updateFooters();
+  });
+
+  weeksEl.addEventListener("input", function (e) {
+    var t = e.target;
+    if (t.classList.contains("ate")) {
+      var digits = t.value.replace(/\D/g, "").slice(0, 5);
+      if (digits !== t.value) t.value = digits;
+      var k = t.getAttribute("data-iso");
+      if (digits === "") delete state.actual[k]; else state.actual[k] = digits;
+      t.classList.toggle("filled", digits !== "");
+      save();
+      refresh(parseInt(t.closest(".week").id.replace("week-", ""), 10) - 1);
+      renderToday();
+    } else if (t.classList.contains("kg")) {
+      var v = t.value.replace(",", ".").trim();
+      if (v === "") delete state.weights[t.getAttribute("data-iso")];
+      else state.weights[t.getAttribute("data-iso")] = v;
+      save();
+      updateFooters();
+    } else if (t.classList.contains("waist")) {
+      var c = t.value.replace(",", ".").trim();
+      if (c === "") delete state.waist[t.getAttribute("data-week")];
+      else state.waist[t.getAttribute("data-week")] = c;
+      save();
+    }
+  });
+
+  // ---------- Init ----------
+  renderAll();
+  var ci = currentWeekIndex();
+  if (ci > 0) {
+    var target = document.getElementById("week-" + weeks[ci].n);
+    setTimeout(function () { target.scrollIntoView({ block: "start" }); }, 0);
+  }
+})();
+</script>
+</body>
+</html>
